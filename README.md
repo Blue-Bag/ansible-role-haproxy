@@ -41,7 +41,9 @@ The user and group under which HAProxy should run. Only change this if you know 
       #  - 'some extra frontend param, acl for example'
       backend: 'habackend'
       # Optional:
-      timeout client: 10s
+      timeout_client: 10s
+      setsecurecookies: yes
+      set_hsts: yes
 
 List of HAProxy frontends.
 
@@ -53,6 +55,7 @@ List of HAProxy frontends.
       options:
         - "haproxy_backend_httpchk: 'HEAD / HTTP/1.1\r\nHost:localhost'"
       params:
+        - 'stick-table type ip size 200k expire 30m'
         - 'stick on src'
       servers:
       - name: app1
@@ -60,14 +63,17 @@ List of HAProxy frontends.
 	    extra_opts: 'inter 2s'
       - name: app2
         address: 192.168.0.2:80
-      timeout connect 5s
-      timeout server 20s
+      timeout_connect 5s
+      timeout_server 20s
 
 List of HAProxy backends and servers to which HAProxy will distribute requests.
 
     haproxy_global_vars:
-      - 'ssl-default-bind-ciphers ABCD+KLMJ:...'
-      - 'ssl-default-bind-options no-sslv3'
+      - 'stats           socket /var/run/haproxy.stat mode 777'
+      - 'spread-checks   5'
+
+Note that the ssl defaults are now handled specifically with ha_proxy_set_ssl_default
+
 
 A list of extra global variables to add to the global configuration section inside `haproxy.cfg`.
 
