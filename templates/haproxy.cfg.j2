@@ -47,16 +47,66 @@ defaults
   errorfile 504 /etc/haproxy/errors/504.http
 {% endif %}
 
+{% if haproxy_stats.enable %}
+# stats interface for monitoring
+listen stats
+    bind {{ haproxy_stats.bindip }}:{{ haproxy_stats.port }}
+    mode {{ haproxy_stats.mode }}
+{% if not haproxy_stats.log %}
+    no log
+{% endif %}
+    stats {{ 'enable' if haproxy_stats.enable else 'disable' }}
+    stats uri {{ haproxy_stats.uri | default('/stats') }}
+    stats realm {{ haproxy_stats.realm }}
+    stats auth {{ haproxy_stats.auth }}
+    stats refresh {{ haproxy_stats.refresh | default('10s')}}
+    stats admin {{ haproxy_stats.admin }}
+{% endif %}
+
+
+
+
 {% for front in haproxy_frontends %}
 frontend {{ front.name }}
-    bind {{ front.address }} {{ front.bind_params |default('') }}
-    {% for addr in (front.extra_addresses | default([])) %}
-    bind {{ addr }} {{ front.bind_params |default('') }}
-    {% endfor %}
+    bind {{ front.address }} {{ front.bind_params | join(' ') |default('') }}
+{% for addr in (front.extra_addresses | default([])) %}
+    bind {{ addr }} {{ front.extra_bind_params | join(' ') | default('') }}
+{% endfor %}
     mode {{ front.mode | default('http') }}
-    {%   for frontparam in (front.params | default([])) %}
+
+  ### Header manipulation ###
+
+    http-request  set-header          X-Forwarded-For   %[src]
+    reqadd        X-Forwarded-Proto:\ https             if { ssl_fc }
+    option        forwardfor          header            Proxy-ip
+
+  {% if front.setsecurecookies is defined and front.setsecurecookies %}
+  rspirep       ^(set-cookie:.*) \1;\ Secure                    if { ssl_fc }
+  {% endif %}
+  {% if front.set_hsts is defined and front.set_hsts %}
+  rspadd        Strict-Transport-Security:\ max-age=31536000    if { ssl_fc }
+  {% endif %}
+
+  {% for delheader in ha_proxy_headers_delete %}
+  rspidel       {{ delheader }}
+  {% endfor %}
+  {% if ha_proxy_redirect_insecure %}
+  {#- could allow for a condition here e.g. if !{ ssl_fc } !is_some_acl -#}
+  redirect      scheme              https             if !{ ssl_fc }
+  {% endif %}
+  {# must be a better way to substitute the scheme than check for the ssl_fc #}
+  {% if ha_proxy_redirect_nonwww and not ha_proxy_redirect_nonwww %}
+  http-request redirect code 301 location https://www.%[hdr(host)]%[capture.req.uri]  unless { hdr_beg(host) -i www } if { ssl_fc }
+  http-request redirect code 301 location http://www.%[hdr(host)]%[capture.req.uri]  unless { hdr_beg(host) -i www } if !{ ssl_fc }
+  {% endif %}
+  {% if ha_proxy_redirect_www and not ha_proxy_redirect_www %}
+  http-request redirect prefix https://%[hdr(host),regsub(^www\.,,i)] code 301 if { hdr_beg(host) -i www. } if { ssl_fc }
+  http-request redirect prefix http://%[hdr(host),regsub(^www\.,,i)] code 301 if { hdr_beg(host) -i www. } if !{ ssl_fc }
+  {% endif %}
+
+{%  for frontparam in (front.params | default([])) %}
     {{ frontparam }}
-    {%   endfor %}
+{%  endfor %}
     default_backend {{ front.backend }}
 {%   for frontopt in (front.options | default([])) %}
     option {{ frontopt }}
@@ -72,6 +122,7 @@ frontend {{ front.name }}
 {%     endif %}
 {%   endif %}
 {% endfor %}
+## ---- Backends ----  ##
 
 {% for back in haproxy_backends %}
 backend {{ back.name }}
