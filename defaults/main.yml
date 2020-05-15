@@ -42,3 +42,17 @@ haproxy_logrotate_backlog_size: 366
 
 # haproxy template source
 haproxy_cfg_template: haproxy.cfg.j2
+
+# stats
+# https://cbonte.github.io/haproxy-dconv/1.8/configuration.html#4-stats%20admin
+haproxy_stats:
+    enable: yes
+    mode: 'http'
+    bindip: '*'
+    port: '9090'
+    log: no
+    uri: '/stats'
+    realm: 'Strictly\ Private'
+    auth: 'admin:passwordvaulted'
+    refresh: '10s'
+    admin: 'if TRUE'
