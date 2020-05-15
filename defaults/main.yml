@@ -6,14 +6,44 @@ haproxy_user: haproxy
 haproxy_group: haproxy
 
 haproxy_frontends: []
+#set options in README
+
 haproxy_backends: []
 
 # Extra global vars (see README for example usage).
 haproxy_global_vars: []
 
+# see https://ssl-config.mozilla.org/#server=haproxy&version=1.8&config=intermediate&openssl=1.1.1d&guideline=5.4
+ha_proxy_set_ssl_default: yes
+ssl_default_bind_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
+ssl_default_bind_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+
+ssl_dh_param_file: ''
+
+ssl_default_server_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
+ssl_default_server_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+
 haproxy_defaults_options:
   - httplog
   - dontlognull
+# at present these are global to all frontends
+ha_proxy_headers_add: []
+
+
+ha_proxy_headers_delete:
+  - "^Proxy:"
+  - "^Server:.*"
+  - "^X-Powered-By:.*"
+
+ha_proxy_redirect_insecure: yes
+ha_proxy_redirect_nonwww: yes
+ha_proxy_redirect_www: no
+
+
+# redirects - to_do genera redirects
+ha_proxy_redirects: []
+
+
 
 haproxy_defaults_timeouts:
   - connect 5000
