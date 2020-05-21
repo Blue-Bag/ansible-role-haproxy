@@ -1,31 +1,144 @@
 ---
-haproxy_package_name: haproxy
+haproxy_use_ppa: false
+haproxy_use_backports: false
+haproxy_version: 2.0
+
+haproxy_package_name: 'haproxy'
+
+haproxy_dependencies:
+  - name: "{{ haproxy_package_name }}"
+    state: latest
+
+haproxy_install: []
+
+service_default_state: 'started'
+service_default_enabled: 'true'
+
 haproxy_socket: /var/lib/haproxy/stats
-haproxy_chroot: /var/lib/haproxy
-haproxy_user: haproxy
-haproxy_group: haproxy
 
-haproxy_frontends: []
-#set options in README
 
-haproxy_backends: []
+# Global section
+haproxy_global_log:
+  - address: /dev/log
+    facility: local0
+  - address: /dev/log
+    facility: local1
+    level: notice
+haproxy_global_stats:
+  sockets:
+    - listen: /var/lib/haproxy/stats
+      param:
+        - level
+        - 'admin'
+  timeout: 30s
+
+haproxy_global_chroot: '/var/lib/haproxy'
+haproxy_global_user: haproxy
+haproxy_global_group: haproxy
+haproxy_global_daemon: true
+haproxy_global_master_worker: false
+
+# optional:
+# haproxy_global_maxconn: 40000
 
 # Extra global vars (see README for example usage).
-haproxy_global_vars: []
+haproxy_global_option: []
+haproxy_global_peers: []
+haproxy_global_raw_options: []
 
+
+haproxy_global_ca_base: '/etc/ssl/certs'
+haproxy_global_crt_base: '/etc/ssl/private'
+
+# Default ciphers to use on SSL-enabled listening sockets.
+# For more information, see ciphers(1SSL).
 # see https://ssl-config.mozilla.org/#server=haproxy&version=1.8&config=intermediate&openssl=1.1.1d&guideline=5.4
+#  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
 ha_proxy_set_ssl_default: yes
-ssl_default_bind_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
-ssl_default_bind_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+haproxy_global_ssl_default_bind_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
+haproxy_global_ssl_default_bind_ciphersuites: ''
+haproxy_global_ssl_default_bind_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
 
-ssl_dh_param_file: ''
+haproxy_global_ssl_default_server_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
+haproxy_global_ssl_default_server_ciphersuites: ''
+haproxy_global_ssl_default_server_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
 
-ssl_default_server_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
-ssl_default_server_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+haproxy_global_ssl_dh_param_file: ''
 
-haproxy_defaults_options:
+# optional:
+# haproxy_global_ssl_engines
+# haproxy_global_ssl_mode_async
+
+haproxy_global_nbproc: 1
+# optional
+# Threading - see https://www.haproxy.com/blog/multithreading-in-haproxy/
+# haproxy_global_nbthread 4
+
+# Tune
+# tune.ssl.default-dh-param 1024 # sets the maximum size of the Diffie-Hellman parameters in DHE key exchange.
+# haproxy_global_tune:
+#   - key: 'ssl.default-dh-param'
+#     value: '1024'
+
+## Default section vars
+# defaults section
+haproxy_defaults_log: global
+haproxy_defaults_mode: http
+haproxy_defaults_option:
   - httplog
   - dontlognull
+# if a webserver backend
+  # - http-server-close
+  # - redispatch
+
+# haproxy_defaults_no_option:[]
+# haproxy_default_raw_options: []
+haproxy_default_server_params: []
+haproxy_defaults_timeout:
+  - type: connect
+    timeout: 5000
+  - type: client
+    timeout: 50000
+  - type: server
+    timeout: 50000
+  - type: http-request
+    timeout: 5s
+  - type: queue
+    timeout: 1m
+  - type: http-keep-alive
+    timeout: 10s
+  - type: check
+    timeout: 5s
+
+# optional
+# haproxy_defaults_source: ''
+# haproxy_defaults_no_option:[]
+# Compression:
+# haproxy_defaults_compression:
+#   - name: 'algo'
+#     value: 'gzip'
+#   - name: 'type'
+#     value: 'text/html text/html;charset=utf-8 text/html;charset=ISO-8859-1 text/plain text/css text/javascript application/x-javascript application/javascript application/ecmascript application/rss+xml application/atomsvc+xml application/atom+xml application/atom+xml;type=entry application/atom+xml;type=feed application/cmisquery+xml application/cmisallowableactions+xml application/cmisatom+xml application/cmistree+xml application/cmisacl+xml application/msword application/vnd.ms-excel application/vnd.ms-powerpoint'
+
+# error files should not exceed the configured buffer size (BUFSIZE), which
+# generally is 8 or 16 kB, otherwise they will be truncated.
+haproxy_defaults_errorfile:
+  - code: 400
+    file: /etc/haproxy/errors/400.http
+  - code: 403
+    file: /etc/haproxy/errors/403.http
+  - code: 408
+    file: /etc/haproxy/errors/408.http
+  - code: 500
+    file: /etc/haproxy/errors/500.http
+  - code: 502
+    file: /etc/haproxy/errors/502.http
+  - code: 503
+    file: /etc/haproxy/errors/503.http
+  - code: 504
+    file: /etc/haproxy/errors/504.http
+
+
 # at present these are global to all frontends
 ha_proxy_headers_add: []
 
@@ -43,12 +156,6 @@ ha_proxy_redirect_www: no
 # redirects - to_do genera redirects
 ha_proxy_redirects: []
 
-
-
-haproxy_defaults_timeouts:
-  - connect 5000
-  - client  50000
-  - server  50000
 
 # Set this to True to configure syslog file logging
 haproxy_syslog_enable: false
@@ -75,14 +182,34 @@ haproxy_cfg_template: haproxy.cfg.j2
 
 # stats
 # https://cbonte.github.io/haproxy-dconv/1.8/configuration.html#4-stats%20admin
-haproxy_stats:
-    enable: yes
-    mode: 'http'
-    bindip: '*'
-    port: '9090'
-    log: no
-    uri: '/stats'
-    realm: 'Strictly\ Private'
-    auth: 'admin:passwordvaulted'
-    refresh: '10s'
-    admin: 'if TRUE'
+# haproxy_stats:
+#     enable: yes
+#     mode: 'http'
+#     bindip: '*'
+#     port: '9090'
+#     log: no
+#     uri: '/stats'
+#     realm: 'Strictly\ Private'
+#     auth: 'admin:passwordvaulted'
+#     refresh: '10s'
+#     admin: 'if TRUE'
+
+# listen section
+haproxy_listen: []
+
+haproxy_frontends: []
+#set options in README
+
+haproxy_backends: []
+
+# ssl (file) map
+haproxy_ssl_map: []
+
+# ACL files
+haproxy_acl_files: []
+
+# user-lists section
+haproxy_userlists: []
+
+# resolvers section:
+haproxy_resolvers: []
