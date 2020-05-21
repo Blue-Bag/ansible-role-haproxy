@@ -1,0 +1,22 @@
+---
+
+- name: configure haproxy logrotation
+  become: true
+  template:
+    backup: false
+    dest: /etc/logrotate.d/haproxy
+    src: logrotated-haproxy.j2
+
+# TODO: This is still in development- more configuration is needed to prevent
+# some haproxy logs going to the console, and to potentially take account of
+# other apps using the same syslog facility (probably unlikely)
+- name: configure haproxy log file
+  become: true
+  template:
+    backup: false
+    # Deliberately named to overwrite the ubuntu haproxy config:
+    dest: /etc/rsyslog.d/49-haproxy.conf
+    src: rsyslogd-haproxy.j2
+  when: haproxy_syslog_enable
+  notify:
+    - restart rsyslog

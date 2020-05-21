@@ -1,0 +1,43 @@
+---
+
+- name: Enable Backports repository (Debian).
+  apt_repository:
+    repo: "deb http://ftp.debian.org/debian {{ ansible_distribution_release }}-backports main"
+    state: present
+    filename: "{{ ansible_distribution_release }}_backports"
+  when: ansible_distribution == "Debian" and haproxy_use_backports
+  #ansible_distribution_major_version == '10'
+
+
+- name: Update the repository cache and update package default release backport
+  apt:
+    name: "{{ haproxy_package_name }}"
+    state: latest
+    default_release: "{{ ansible_distribution_release }}-backports"
+    update_cache: yes
+  when: ansible_distribution == "Debian" and haproxy_use_backports
+
+- name: install | add repository from PPA and install its signing key
+  apt_repository:
+    repo: "{{ haproxy_ppa }}"
+    update_cache: true
+  when: haproxy_use_ppa
+  tags:
+    - haproxy-install-add-repository
+
+- name: install | dependencies
+  package:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  with_items: "{{ haproxy_dependencies }}"
+  tags:
+    - haproxy-install-dependencies
+
+
+- name: install | additional
+  package:
+    name: "{{ item }}"
+    state: "{{ apt_install_state | default('latest') }}"
+  with_items: "{{ haproxy_install }}"
+  tags:
+    - haproxy-install-additional

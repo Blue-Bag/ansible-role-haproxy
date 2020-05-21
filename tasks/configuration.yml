@@ -1,0 +1,15 @@
+---
+
+- name: Copy HAProxy configuration in place.
+  become: true
+  template:
+    src: "{{ haproxy_cfg_template }}"
+    dest: /etc/haproxy/haproxy.cfg
+    mode: 0644
+    owner: root
+    group: root
+    # validate: haproxy -f %s -c -q
+    backup: true
+  notify: restart haproxy
+  tags:
+    - haproxy-configuration-update-file

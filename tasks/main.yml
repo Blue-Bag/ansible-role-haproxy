@@ -1,30 +1,44 @@
 ---
-- name: Ensure HAProxy is installed
-  become: true
-  package:
-    name: "{{ haproxy_package_name }}"
-    state: present
 
-- name: configure haproxy logrotation
-  become: true
-  template:
-    backup: false
-    dest: /etc/logrotate.d/haproxy
-    src: logrotated-haproxy.j2
+- name: check version support
+  fail:
+    msg: "HAProxy version {{ haproxy_version }} is not supported"
+  when: haproxy_version | string not in haproxy_versions_supported
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-check-version-support
 
-# TODO: This is still in development- more configuration is needed to prevent
-# some haproxy logs going to the console, and to potentially take account of
-# other apps using the same syslog facility (probably unlikely)
-- name: configure haproxy log file
-  become: true
-  template:
-    backup: false
-    # Deliberately named to overwrite the ubuntu haproxy config:
-    dest: /etc/rsyslog.d/49-haproxy.conf
-    src: rsyslogd-haproxy.j2
-  when: haproxy_syslog_enable
-  notify:
-    - restart rsyslog
+- import_tasks: install.yml
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-install
+
+- import_tasks: certificates.yml
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-certificates
+
+- import_tasks: acl.yml
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-acl
+
+- import_tasks: configuration.yml
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-configuration
+
+- import_tasks: logging.yml
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-logging
+
 
 - name: Ensure HAProxy is enabled (so init script will start it on Debian).
   become: true
@@ -45,15 +59,14 @@
   # Since this is an external role we can't assume it's been run
   when: "selinux_enabled | default(False)"
 
-- name: Copy HAProxy configuration in place.
-  become: true
-  template:
-    src: "{{ haproxy_cfg_template }}"
-    dest: /etc/haproxy/haproxy.cfg
-    mode: 0644
-    validate: haproxy -f %s -c -q
-  notify: restart haproxy
 
 - name: Ensure HAProxy is started and enabled on boot.
+  service:
+    name: haproxy
+    state: "{{ service_default_state | default('started') }}"
+    enabled: "{{ service_default_enabled | default(true) | bool }}"
   become: true
-  service: name=haproxy state=started enabled=yes
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-start-enable-service
