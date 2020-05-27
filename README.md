@@ -7,7 +7,8 @@ Installs HAProxy on RedHat/CentOS and Debian/Ubuntu Linux servers.
 
 **Note**: This role _officially_ supports HAProxy versions 1.5 and 1.6. Future versions may require some rework.
 
-**Note**: This role combines two forks on originating from Jeff Geerling and the other from https://github.com/Oefenweb/ansible-haproxy
+**Note**: This role combines a fork originating from Jeff Geerling by https://github.com/ome/ansible-role-haproxy
+and another role from https://github.com/Oefenweb/ansible-haproxy
 
 ## Requirements
 
@@ -15,6 +16,15 @@ If SELinux is enabled on CentOS 7 and you are using non-standard ports you must 
 
 
 ## Role Variables
+
+* `haproxy_use_ppa`: [default: `true`]: Whether or not to add the PPA (for installation)
+
+* `haproxy_version`: [default: `1.8`]: Version to install (e.g. `1.5`, `1.6`, `1.7`, `1.8`, `1.9`, `2.0`, `2.1`)
+* `haproxy_version`: [default: `1.8`]: Version to install (e.g. `1.5`, `1.6`, `1.7`, `1.8`, `1.9`, `2.0`, `2.1`)
+
+
+* `haproxy_install`: [default: `[]`]: Additional packages to install (e.g. `socat`)
+* `haproxy_install`: [default: `[]`]: Additional packages to install (e.g. `socat`)
 
 Available variables are listed below, along with default values (see `defaults/main.yml`):
 
@@ -169,6 +179,15 @@ haproxy_listen:
         - user: admin
           passwd: 'NqXgKWQ9f9Et'
 ```
+# ACLs
+ These can be very comlex and therefor edifiicult to model
+ So for now we have extended the pattern to have a name and a condition.
+
+* `haproxy_frontend.{n}.acl`: [optional]: Create an ACL check which can be later used in evaluations/conditionals
+* `haproxy_frontend.{n}.acl.{n}.name`: [required]: ACL entry to be used in conditional check later
+* `haproxy_frontend.{n}.acl.{n}.condition`: [required]: values of the acl
+
+
 ## Dependencies
 
 None.
