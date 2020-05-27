@@ -24,29 +24,80 @@
       haproxy_syslog_configure_udp: true
       haproxy_frontends:
         - name: hafrontend-http
-          address: '*:80'
-          extra_addresses:
-            - '*:8080'
-          # params:
-          #   - 'some extra frontend param, acl for example'
-          backend: habackend
-        - name: hafrontend-tcp
-          address: '*:81'
-          mode: tcp
-          backend: habackend
-        - name: hafrontend-https
-          address: '*:443'
-          bind_params: 'ssl crt /etc/ssl/certs/dummy.pem'
+          description: Front-end for all HTTP traffic
+          bind:
+            - listen: "*:80"
           mode: http
-          backend: habackend
+          redirect:
+            - string: 'scheme https code 301'
+              cond: 'if !{ ssl_fc }'
+          default_backend: habackend
+        - name: https
+          description: Front-end for all HTTPS traffic
+          bind:
+            - listen: "*:443"
+              param:
+                - ssl
+                - 'crt /etc/ssl/certs/dummy.pem'
+                - 'alpn h2,http/1.1'
+          mode: http
+          acl:
+            - name: is_static
+              condition: 'path_end         .gif .png .jpg .css .js'
+            - name: is_store
+              condition: 'path_beg         /store/'
+          default_backend: webservers
+          backends:
+            - name: webservers
+              condition: 'if is_static'
+            - name: webservers
+              condition: 'if is_store'
+          timeout:
+            - type: 'client'
+              timeout: '10s'
+          option:
+            - 'forwardfor  header            Proxy-ip'
+          http_request:
+            - action: 'set-header'
+              param: 'X-Forwarded-For %[src]'
+          reqadd:
+            - string: 'X-Forwarded-Proto:\ https'
+              cond: 'if { ssl_fc }'
+          rspadd:
+            - string: 'Strict-Transport-Security:\ max-age=15768000'
+          rspidel:
+            - search: '^Proxy:'
+            - search: '^Server:.*'
+            - search: '^X-Powered-By:.*'
+          rspirep:
+            - search: '^(set-cookie:.*)'
+              string: '\1;\ Secure'
+              cond: 'if { ssl_fc }'
       haproxy_backends:
-        - name: habackend
+        - name: webservers
+          description: Back-end with all (Apache) webservers
           mode: http
-          params:
-            - 'default-server inter 3s'
-          servers:
-            - name: app1
-              address: 192.168.0.1:80
-              extra_opts: 'inter 2s'
-            - name: app2
-              address: 192.168.0.2:80
+          balance: roundrobin
+          option:
+            - forwardfor
+            - 'httpchk HEAD / HTTP/1.1\r\nHost:localhost\r\nUser-Agent:\ haproxy'
+          http_request:
+            - action: 'set-header'
+              param: 'X-Forwarded-Port %[dst_port]'
+            - action: 'add-header'
+              param: 'X-Forwarded-Proto https'
+              cond: 'if { ssl_fc }'
+          stick:
+            - table: 'type ip size 200k expire 30m'
+              stick_on: 'src'
+          server:
+            - name: web-01
+              listen: "192.168.0.1:80"
+              param:
+                - 'maxconn 501'
+                - check
+            - name: web-02
+              listen: "192.168.0.2:80"
+              param:
+                - 'maxconn 502'
+                - check
