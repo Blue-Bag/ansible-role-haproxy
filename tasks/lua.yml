@@ -1,0 +1,39 @@
+---
+
+
+- name: Create LUA scripts directory
+  file:
+    path: "{{ haproxy_lua_folder }}"
+    state: directory
+    owner: "{{ haproxy_lua_folder_owner | default('root') }}"
+    group: "{{ haproxy_lua_folder_group | default('root') }}"
+    mode: 0750
+  tags:
+    - haproxy-lua-create-directories
+    - haproxy-lua
+
+- block:
+    - name: Upload LUA scripts
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest | default(haproxy_lua_folder) }}"
+        owner: "{{ item.owner | default('root') }}"
+        group: "{{ item.group | default('root') }}"
+        mode: "{{ item.mode | default('0640') }}"
+      notify: restart haproxy
+      when: not item.istemplate
+      loop: "{{ haproxy_lua_files }}"
+
+    - name: Template LUA files
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest | default(haproxy_lua_folder) }}"
+        owner: "{{ item.owner | default('root') }}"
+        group: "{{ item.group | default('root') }}"
+        mode: "{{ item.mode | default('0640') }}"
+      when: item.istemplate
+      loop: "{{ haproxy_lua_files }}"
+      notify: restart haproxy
+  tags:
+     - haproxy-lua-update-files
+     - haproxy-lua

@@ -213,3 +213,10 @@ haproxy_userlists: []
 
 # resolvers section:
 haproxy_resolvers: []
+
+# LUA files
+haproxy_lua_files: []
+
+haproxy_lua_folder: '/usr/local/share/lua/5.3/'
+haproxy_lua_folder_owner: 'root'
+haproxy_lua_folder_group: 'root'
