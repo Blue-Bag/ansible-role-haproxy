@@ -36,8 +36,8 @@
 
 - name: install | additional
   package:
-    name: "{{ item }}"
-    state: "{{ apt_install_state | default('latest') }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('latest') }}"
   with_items: "{{ haproxy_install }}"
   tags:
     - haproxy-install-additional
