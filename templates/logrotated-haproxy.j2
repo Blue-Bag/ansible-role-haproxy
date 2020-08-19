@@ -1,5 +1,5 @@
 # {{ ansible_managed }}
-/var/log/haproxy/*.log {
+{{ haproxy_log_dir }}/*.log {
     {{ haproxy_logrotate_interval }}
     missingok
     rotate {{ haproxy_logrotate_backlog_size }}

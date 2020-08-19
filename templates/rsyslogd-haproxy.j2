@@ -6,7 +6,18 @@ $UDPServerRun 514
 $AllowedSender UDP, 127.0.0.1
 {%   endif %}
 
-{{ haproxy_syslog_dest }}.* /var/log/haproxy/haproxy.log
-{{ haproxy_syslog_dest_tcp }}.* /var/log/haproxy/haproxy-tcp.log
-{{ haproxy_syslog_dest_http }}.* /var/log/haproxy/haproxy-http.log
+{% if haproxy_syslog_custom %}
+{{ haproxy_syslog_dest }}.* {{ haproxy_log_dir }}/haproxy.log
+{{ haproxy_syslog_dest_tcp }}.* {{ haproxy_log_dir }}/haproxy-tcp.log
+{{ haproxy_syslog_dest_http }}.* {{ haproxy_log_dir }}/haproxy-http.log
+{% elif %}
+# Create an additional socket in haproxy's chroot in order to allow logging via
+# /dev/log to chroot'ed HAProxy processes
+$AddUnixListenSocket /var/lib/haproxy/dev/log
+
+# Send HAProxy messages to a dedicated logfile
+:programname, startswith, "haproxy" {
+  {{ haproxy_log_dir }}/haproxy.log
+  stop
+}
 {% endif %}

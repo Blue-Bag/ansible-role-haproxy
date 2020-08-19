@@ -84,7 +84,23 @@ List of HAProxy backends and servers to which HAProxy will distribute requests.
       - 'stats           socket /var/run/haproxy.stat mode 777'
       - 'spread-checks   5'
 
-Note that the ssl defaults are now handled specifically with ha_proxy_set_ssl_default
+Note that the ssl defaults are now handled specifically with haproxy_global_set_ssl_default
+
+Sensible defaults are set for the ssl/tls setup
+You can get recommendations for cyphers and options etc from:
+# For more information, see ciphers(1SSL).
+# see https://ssl-config.mozilla.org/#server=haproxy&version=1.8&config=intermediate&openssl=1.1.1d&guideline=5.4
+#  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+
+* `haproxy_global_ssl_default_bind_ciphers`
+* `haproxy_global_ssl_default_bind_ciphersuites`
+* `haproxy_global_ssl_default_bind_options`
+
+* `haproxy_global_ssl_default_server_ciphers`
+* `haproxy_global_ssl_default_server_ciphersuites`
+* `haproxy_global_ssl_default_server_options`
+
+* `haproxy_global_ssl_dh_param_file`
 
 
 A list of extra global variables to add to the global configuration section inside `haproxy.cfg`.
@@ -186,6 +202,38 @@ haproxy_listen:
 * `haproxy_frontend.{n}.acl`: [optional]: Create an ACL check which can be later used in evaluations/conditionals
 * `haproxy_frontend.{n}.acl.{n}.name`: [required]: ACL entry to be used in conditional check later
 * `haproxy_frontend.{n}.acl.{n}.condition`: [required]: values of the acl
+
+# Logging: Syslog
+The role supports two types of syslog config
+1) Simple rsyslog configuration to set the log directory
+2) Custom syslog targets for tcp, http etc
+
+If you are happy to use the out of the box defaults installed then you can
+Not set the role to reconfigure sysloging.
+
+* `haproxy_syslog_enable`: Set this to True to re-configure syslog file logging
+
+## 1) Simple rsyslog configuration to set the log directory
+This just simply update he default config
+* `haproxy_syslog_enable`: true - this will allow us to rewrite the rsyslog setting for haproxy
+* `haproxy_syslog_custom`: false - this will use the defaults but rewrite the log destination folder
+
+## 2) Custom syslog targets for tcp, http etc
+Using this option we can specify different logs for different log types and levels within haproxy
+* `haproxy_syslog_enable`: true - this will allow us to rewrite the rsyslog setting for haproxy
+* `haproxy_syslog_custom`: true - this will use the custom logs
+
+
+# If you want to log to a file you need to configure rsyslog, but this may
+# have global effects on syslog
+# This variable is for convenience, set to True if this is the only role
+# that will be configuring rsyslog
+* `haproxy_syslog_configure_udp` haproxy_syslog_configure_udp: false
+
+# The syslog destinations
+* `haproxy_syslog_dest`: local2
+* `haproxy_syslog_dest_tcp`: local3
+* `haproxy_syslog_dest_http`: local4
 
 
 ## Dependencies

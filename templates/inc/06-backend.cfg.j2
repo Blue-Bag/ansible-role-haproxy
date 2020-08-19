@@ -7,11 +7,15 @@ backend {{ backend.name }}
 
 {% if backend.bind_process is defined %}
   bind-process {{ backend.bind_process | join(' ') }}
-{% endif %}
+{% endif -%}
 
+{% if backend.mode is defined %}
   mode {{ backend.mode }}
+{% endif -%}
 
+{% if backend.balance is defined %}
   balance {{ backend.balance }}
+{% endif -%}
 
 {% if backend.source is defined %}
   source {{ backend.source }}

@@ -29,7 +29,9 @@ listen {{ listen.name }}
   bind-process {{ listen.bind_process | join(' ') }}
 {% endif %}
 
+{% if listen.mode is defined %}
   mode {{ listen.mode }}
+{% endif -%}
 
 {% if listen.balance is defined %}
   balance {{ listen.balance }}
@@ -72,8 +74,8 @@ listen {{ listen.name }}
   timeout {{ timeout.type }} {{ timeout.timeout }}
 {% endfor -%}
 
-{% for acl in listen.acl | default([]) %}
-  acl {{ acl.string }}
+{%- for acl in listen.acl | default([]) %}
+  acl {{ acl.name }} {{ acl.condition }}
 {% endfor -%}
 
 {% for capture in listen.capture | default([]) %}
@@ -193,4 +195,5 @@ listen {{ listen.name }}
 {% for line in listen.raw_options | default([]) %}
   {{ line }}
 {% endfor %}
+
 {% endfor -%}

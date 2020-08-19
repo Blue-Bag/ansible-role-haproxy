@@ -44,7 +44,7 @@
   maxconn {{ haproxy_global_maxconn }}
 {% endif -%}
 
-{% if ha_proxy_set_ssl_default %}
+{% if haproxy_global_set_ssl_default %}
 
 {% if haproxy_global_ca_base != false %}
   # Default SSL material locations
@@ -90,7 +90,7 @@
 {% if haproxy_global_ssl_dh_param_file != '' %}
 ssl-dh-param-file {{ haproxy_global_ssl_dh_param_file }}
 {% endif -%}
-{# ha_proxy_set_ssl_default #}
+{# haproxy_global_set_ssl_default #}
 {% endif %}
 
 ## Tuning
@@ -117,3 +117,10 @@ peers {{ peers.name }}
 {% for line in haproxy_global_raw_options | default([]) %}
   {{ line }}
 {% endfor %}
+
+{% if haproxy_lua_files  | length > 0 %}
+## Lua Scripts
+{% for lua in haproxy_lua_files | default([]) if lua.global_ref %}
+lua-load {{lua.dest }}/{{ lua.filename}}
+{% endfor %}
+{% endif %}

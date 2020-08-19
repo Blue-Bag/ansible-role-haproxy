@@ -16,7 +16,7 @@
     - name: Upload LUA scripts
       copy:
         src: "{{ item.src }}"
-        dest: "{{ item.dest | default(haproxy_lua_folder) }}"
+        dest: "{{ item.dest | default(haproxy_lua_folder) }}/{{ item.filename }}"
         owner: "{{ item.owner | default('root') }}"
         group: "{{ item.group | default('root') }}"
         mode: "{{ item.mode | default('0640') }}"
@@ -27,7 +27,7 @@
     - name: Template LUA files
       template:
         src: "{{ item.src }}"
-        dest: "{{ item.dest | default(haproxy_lua_folder) }}"
+        dest: "{{ item.dest | default(haproxy_lua_folder) }}/{{ item.filename }}"
         owner: "{{ item.owner | default('root') }}"
         group: "{{ item.group | default('root') }}"
         mode: "{{ item.mode | default('0640') }}"

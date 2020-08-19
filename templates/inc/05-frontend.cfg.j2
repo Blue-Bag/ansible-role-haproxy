@@ -14,7 +14,10 @@ frontend {{ frontend.name }}
   bind-process {{ frontend.bind_process | join(' ') }}
 {% endif %}
 
+{% if frontend.mode is defined %}
   mode {{ frontend.mode }}
+{% endif -%}
+
 
 {% if frontend.maxconn is defined %}
   maxconn {{ frontend.maxconn }}
