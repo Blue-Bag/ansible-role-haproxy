@@ -1,0 +1,27 @@
+{% for back in haproxy_backends %}
+## ---- Backends ----  ##
+backend {{ back.name }}
+    mode {{ back.mode | default('http') }}
+{%   if back.balance_method | default('') | length > 0 %}
+    balance {{ back.balance_method }}
+{%   endif %}
+{%   for backopt in (back.options | default([])) %}
+    option {{ backopt }}
+{%   endfor %}
+{%   for backparam in (back.params | default([])) %}
+    {{ backparam }}
+{%   endfor %}
+{%   if back.cookie | default('') | length > 0 %}
+    cookie {{ back.cookie }}
+{%   endif %}
+{%   for backend in back.servers %}
+    server {{ backend.name }} {{ backend.address }} {% if back.cookie | default('') | length > 0 %}cookie {{ backend.name }}{% endif %} {% if back.check | default(True) %}check{% endif %} {% if backend.extra_opts | default('') %} {{ backend.extra_opts }} {% endif %}
+
+{%   endfor %}
+{%   if back.timeout_connect | default('') | length > 0 %}
+    timeout connect {{ back.timeout_connect }}
+{%   endif %}
+{%   if back.timeout_server | default('') | length > 0 %}
+    timeout server {{ back.timeout_server }}
+{%   endif %}
+{% endfor %}

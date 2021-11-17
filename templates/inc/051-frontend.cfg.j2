@@ -1,0 +1,57 @@
+{% for front in haproxy_frontends %}
+# Front end configuration
+frontend {{ front.name }}
+    bind {{ front.address }} {{ front.bind_params | join(' ') |default('') }}
+{% for addr in (front.extra_addresses | default([])) %}
+    bind {{ addr }} {{ front.extra_bind_params | join(' ') | default('') }}
+{% endfor %}
+    mode {{ front.mode | default('http') }}
+
+  ### Header manipulation ###
+
+    http-request  set-header          X-Forwarded-For   %[src]
+    reqadd        X-Forwarded-Proto:\ https             if { ssl_fc }
+    option        forwardfor          header            Proxy-ip
+
+  {% if front.setsecurecookies is defined and front.setsecurecookies %}
+  rspirep       ^(set-cookie:.*) \1;\ Secure                    if { ssl_fc }
+  {% endif %}
+  {% if front.set_hsts is defined and front.set_hsts %}
+  rspadd        Strict-Transport-Security:\ max-age=31536000    if { ssl_fc }
+  {% endif %}
+
+  {% for delheader in haproxy_headers_delete %}
+  rspidel       {{ delheader }}
+  {% endfor %}
+  {% if haproxy_redirect_insecure %}
+  {#- could allow for a condition here e.g. if !{ ssl_fc } !is_some_acl -#}
+  redirect      scheme              https             if !{ ssl_fc }
+  {% endif %}
+  {# must be a better way to substitute the scheme than check for the ssl_fc #}
+  {% if haproxy_redirect_nonwww and not haproxy_redirect_nonwww %}
+  http-request redirect code 301 location https://www.%[hdr(host)]%[capture.req.uri]  unless { hdr_beg(host) -i www } if { ssl_fc }
+  http-request redirect code 301 location http://www.%[hdr(host)]%[capture.req.uri]  unless { hdr_beg(host) -i www } if !{ ssl_fc }
+  {% endif %}
+  {% if haproxy_redirect_www and not haproxy_redirect_www %}
+  http-request redirect prefix https://%[hdr(host),regsub(^www\.,,i)] code 301 if { hdr_beg(host) -i www. } if { ssl_fc }
+  http-request redirect prefix http://%[hdr(host),regsub(^www\.,,i)] code 301 if { hdr_beg(host) -i www. } if !{ ssl_fc }
+  {% endif %}
+
+{%  for frontparam in (front.params | default([])) %}
+    {{ frontparam }}
+{%  endfor %}
+    default_backend {{ front.backend }}
+{%   for frontopt in (front.options | default([])) %}
+    option {{ frontopt }}
+{%   endfor %}
+{%   if front.timeout_client | default('') | length > 0 %}
+    timeout client {{ front.timeout_client }}
+{%   endif %}
+{%   if haproxy_syslog_enable %}
+{%     if (front.mode | default('http')) == 'http' %}
+    log 127.0.0.1 {{ haproxy_syslog_dest_http }}
+{%     else %}
+    log 127.0.0.1 {{ haproxy_syslog_dest_tcp }}
+{%     endif %}
+{%   endif %}
+{% endfor %}
