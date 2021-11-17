@@ -21,6 +21,12 @@
     - haproxy
     - haproxy-certificates
 
+- import_tasks: keys.yml
+  tags:
+    - configuration
+    - haproxy
+    - haproxy-keys
+
 - import_tasks: acl.yml
   tags:
     - configuration
