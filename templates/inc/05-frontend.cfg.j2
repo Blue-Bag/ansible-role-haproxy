@@ -90,6 +90,12 @@ frontend {{ frontend.name }}
 
 {% endfor -%}
 
+{% for http_after_response in frontend.http_after_response | default([]) %}
+  http-after-response {{ http_after_response.action }}{% if http_after_response.param is defined %} {{ http_after_response.param }}{% endif %}{% if http_after_response.cond is defined %} {{ http_after_response.cond }}{% endif %}
+
+{% endfor -%}
+
+
 {% for action in ['reqadd', 'rspadd'] %}
 {% for params in frontend[action] | default([]) %}
   {{ action }} {{ params.string }}{% if params.cond is defined %} {{ params.cond }}{% endif %}
