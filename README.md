@@ -19,9 +19,7 @@ If SELinux is enabled on CentOS 7 and you are using non-standard ports you must 
 
 * `haproxy_use_ppa`: [default: `true`]: Whether or not to add the PPA (for installation)
 
-* `haproxy_version`: [default: `1.8`]: Version to install (e.g. `1.5`, `1.6`, `1.7`, `1.8`, `1.9`, `2.0`, `2.1`)
-* `haproxy_version`: [default: `1.8`]: Version to install (e.g. `1.5`, `1.6`, `1.7`, `1.8`, `1.9`, `2.0`, `2.1`)
-
+* `haproxy_version`: [default: `1.8`]: Version to install (e.g. `1.5`, `1.6`, `1.7`, `1.8`, `1.9`, `2.0`, `2.1`, `2.2`)
 
 * `haproxy_install`: [default: `[]`]: Additional packages to install (e.g. `socat`)
 * `haproxy_install`: [default: `[]`]: Additional packages to install (e.g. `socat`)

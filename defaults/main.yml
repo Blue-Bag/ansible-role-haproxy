@@ -1,7 +1,7 @@
 ---
 haproxy_use_ppa: false
 haproxy_use_backports: false
-haproxy_version: 2.0
+haproxy_version: 2.3
 
 haproxy_package_name: 'haproxy'
 
@@ -16,6 +16,8 @@ service_default_enabled: 'true'
 
 haproxy_socket: /var/lib/haproxy/stats
 
+haproxy_ssl_path: '/etc/haproxy/ssl'
+haproxy_key_path: '/etc/haproxy/keys'
 
 # Global section
 haproxy_global_log:
@@ -221,3 +223,6 @@ haproxy_lua_files: []
 haproxy_lua_folder: '/usr/local/share/lua/5.3'
 haproxy_lua_folder_owner: 'root'
 haproxy_lua_folder_group: 'root'
+
+haproxy_lua_accountname: 'account'
+haproxy_key_domains: []
