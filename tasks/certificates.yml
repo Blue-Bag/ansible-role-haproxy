@@ -6,7 +6,7 @@
     state: directory
     owner: "{{ item.owner | default('root') }}"
     group: "{{ item.group | default('root') }}"
-    mode: 0750
+    mode: "{{ item.dir_mode | default(0755) }}"
   with_items: "{{ haproxy_ssl_map }}"
   tags:
     - haproxy-certificates-create-directories
@@ -17,7 +17,7 @@
     dest: "{{ item.dest }}"
     owner: "{{ item.owner | default('root') }}"
     group: "{{ item.group | default('root') }}"
-    mode: "{{ item.mode | default('0400') }}"
+    mode: "{{ item.file_mode | default('0400') }}"
   with_items: "{{ haproxy_ssl_map }}"
   notify: restart haproxy
   tags:
