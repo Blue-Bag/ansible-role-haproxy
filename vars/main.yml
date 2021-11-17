@@ -8,6 +8,8 @@ haproxy_versions_supported:
   - '1.9'
   - '2.0'
   - '2.1'
+  - '2.2'
+  - '2.3'
 
 # we could use a OS variant to look up for this
 # see https://haproxy.debian.net/#?distribution=Debian&release=buster&version=1.8
