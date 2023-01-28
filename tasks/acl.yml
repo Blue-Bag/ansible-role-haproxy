@@ -13,7 +13,7 @@
 
 - name: acl | update files
   template:
-    src: etc/haproxy/acl.j2
+    src: acl.j2
     dest: "{{ item.dest }}"
     owner: "{{ item.owner | default('root') }}"
     group: "{{ item.group | default('root') }}"

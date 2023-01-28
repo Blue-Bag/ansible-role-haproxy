@@ -12,7 +12,7 @@ frontend {{ frontend.name }}
 
 {% if frontend.bind_process is defined %}
   bind-process {{ frontend.bind_process | join(' ') }}
-{% endif %}
+{% endif -%}
 
 {% if frontend.mode is defined %}
   mode {{ frontend.mode }}
@@ -79,7 +79,14 @@ frontend {{ frontend.name }}
 
 {% endfor -%}
 
+{% if frontend.redirect_map is defined and frontend.redirect.enabled %}
+  ### redirects
+  http-request redirect location %[capture.req.uri,map({{ frontend.redirect_map.name }})] code 301 if { capture.req.uri,map({{ frontend.redirect_map.name }}) -m found }
+{% endif -%}
+
+{% if (frontend.http_request is defined) or (frontend.http_response  is defined) or (frontend.http_after_response is defined) %}
   ### Header manipulation ###
+{% endif -%}  
 {% for http_request in frontend.http_request | default([]) %}
   http-request {{ http_request.action }}{% if http_request.param is defined %} {{ http_request.param }}{% endif %}{% if http_request.cond is defined %} {{ http_request.cond }}{% endif %}
 
@@ -130,7 +137,7 @@ frontend {{ frontend.name }}
 {% if frontend.backends is defined %}
   ### backend routing ###
 {% for backend in frontend.backends %}
-  use_backend {{ backend.name }} {{ backend.condition }}
+  use_backend {% if backend.name != 'map' %}{{ backend.name }}{% endif %} {{ backend.condition }}
 {% endfor %}
 {% endif -%}
 
