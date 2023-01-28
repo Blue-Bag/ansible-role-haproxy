@@ -33,7 +33,8 @@
 
 {% if haproxy_global_daemon | bool == true %}
   daemon
-  nbproc {{ haproxy_global_nbproc }}
+  # nbproc is not supported any more since HAProxy 2.5
+  # nbproc {{ haproxy_global_nbproc }}
 {% endif -%}
 
 {% if haproxy_global_master_worker | default(false) | bool %}
