@@ -226,3 +226,8 @@ haproxy_lua_folder_group: 'root'
 
 haproxy_lua_accountname: 'account'
 haproxy_key_domains: []
+
+# Python pysopenssl
+pip_install_packages:
+  - name: pyopenssl
+    state: latest
