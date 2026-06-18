@@ -18,6 +18,7 @@ haproxy_socket: /var/lib/haproxy/stats
 
 haproxy_ssl_path: '/etc/haproxy/ssl'
 haproxy_key_path: '/etc/haproxy/keys'
+haproxy_maps_path: '/etc/haproxy/maps'
 
 # Global section
 haproxy_global_log:
@@ -57,11 +58,15 @@ haproxy_global_crt_base: '/etc/ssl/private'
 haproxy_global_set_ssl_default: true
 haproxy_global_ssl_default_bind_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
 haproxy_global_ssl_default_bind_ciphersuites: ''
-haproxy_global_ssl_default_bind_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+#haproxy_global_ssl_default_bind_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+# as of haproxy 3.x
+haproxy_global_ssl_default_bind_options: 'ssl-min-ver TLSv1.2 no-tls-tickets'
 
 haproxy_global_ssl_default_server_ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384'
 haproxy_global_ssl_default_server_ciphersuites: ''
-haproxy_global_ssl_default_server_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+#haproxy_global_ssl_default_server_options: 'no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets'
+# as of haproxy 3.x
+haproxy_global_ssl_default_server_options: 'ssl-min-ver TLSv1.2 no-tls-tickets'
 
 haproxy_global_ssl_dh_param_file: ''
 
@@ -96,11 +101,11 @@ haproxy_defaults_option:
 haproxy_default_server_params: []
 haproxy_defaults_timeout:
   - type: connect
-    timeout: 5000
+    timeout: 5s
   - type: client
-    timeout: 50000
+    timeout: 50s
   - type: server
-    timeout: 50000
+    timeout: 50s
   - type: http-request
     timeout: 5s
   - type: queue
@@ -153,7 +158,7 @@ haproxy_redirect_nonwww: true
 haproxy_redirect_www: false
 
 
-# redirects - to_do genera redirects
+# redirects - to_do general redirects
 haproxy_redirects: []
 
 
@@ -220,6 +225,10 @@ haproxy_resolvers: []
 # LUA files
 haproxy_lua_files: []
 
+# map files
+haproxy_map_dir: 'maps'
+haproxy_map_files: []
+
 haproxy_lua_folder: '/usr/local/share/lua/5.3'
 haproxy_lua_folder_owner: 'root'
 haproxy_lua_folder_group: 'root'
@@ -231,3 +240,7 @@ haproxy_key_domains: []
 pip_install_packages:
   - name: pyopenssl
     state: latest
+
+python_package_dependencies:
+  - name: python3-openssl
+    state: present
