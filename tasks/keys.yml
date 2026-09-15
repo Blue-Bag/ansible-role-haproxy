@@ -20,6 +20,24 @@
 #openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out account.key
 #openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out example.net.key
 
+# Debian 12 (bookworm) and later mark the system python as externally
+# managed (PEP 668), so pip cannot install into it - use the distro packages.
+- name: Set python install method
+  set_fact:
+    python_externally_managed: "{{ ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] | int >= 12 }}"
+
+- name: Ensure PIP is installed.
+  ansible.builtin.apt:
+    name: python-pip
+    state: present
+  when: ansible_python.version.major==2 and not python_externally_managed | bool
+
+- name: Ensure PIP is installed.
+  ansible.builtin.apt:
+    name: python3-pip
+    state: present
+  when: ansible_python.version.major==3 and not python_externally_managed | bool
+
 - name: Set python pip version
   set_fact:
     pip_executable: 'pip'
@@ -39,7 +57,15 @@
     state: "{{ item.state | default(omit) }}"
     executable: "{{ pip_executable }}"
   loop: "{{ pip_install_packages }}"
+  when: ansible_distribution == "Debian" and not python_externally_managed | bool
 
+- name: Install required packages | Debian
+  apt:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  with_items: "{{ python_package_dependencies }}"
+  become: true
+  when: ansible_distribution == "Debian" and python_externally_managed | bool
 
 - name: Generate an OpenSSL private key for the account
   community.crypto.openssl_privatekey:

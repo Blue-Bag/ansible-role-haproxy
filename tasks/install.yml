@@ -19,9 +19,26 @@
   when: ansible_facts['distribution'] == "Debian" and haproxy_use_backports | bool
 
 
-- name: install | add repository from PPA and install its signing key
-  apt_repository:
-    repo: "{{ haproxy_ppa }}"
+- name: install | add HAProxy PPA signing key
+  ansible.builtin.get_url:
+    url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCCB6CF8783BCD2A0BE2A20C2F0448CD2E653920"
+    dest: /etc/apt/keyrings/haproxy.asc
+    mode: '0644'
+  when: haproxy_use_ppa
+
+- name: install | add repository from PPA
+  ansible.builtin.deb822_repository:
+    name: haproxy
+    types: deb
+    uris: "https://ppa.launchpadcontent.net/vbernat/haproxy-{{ haproxy_version }}/ubuntu"
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: main
+    signed_by: /etc/apt/keyrings/haproxy.asc
+    state: present
+  when: haproxy_use_ppa
+
+- name: install | update apt cache after adding PPA
+  ansible.builtin.apt:
     update_cache: true
   when: haproxy_use_ppa
   tags:
