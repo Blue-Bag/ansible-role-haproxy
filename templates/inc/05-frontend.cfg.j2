@@ -1,5 +1,7 @@
 {% for frontend in haproxy_frontends %}
-  ### Front ends ###
+{% if loop.first %}
+    ### Front ends ###
+{% endif %}
 frontend {{ frontend.name }}
 {% if frontend.description is defined %}
   description {{ frontend.description }}
@@ -21,6 +23,10 @@ frontend {{ frontend.name }}
 
 {% if frontend.maxconn is defined %}
   maxconn {{ frontend.maxconn }}
+{% endif -%}
+
+{% if frontend.monitor_uri is defined %}
+  monitor-uri  {{ frontend.monitor_uri }}
 {% endif -%}
 
 {% for stick in frontend.stick | default([]) %}
@@ -55,6 +61,10 @@ frontend {{ frontend.name }}
 
 {% endif -%}
 
+{% if cf_routing_hosts | default(false) %}
+{% include 'inc/051-frontend-cf-auth.cfg.j2' %}
+{% endif %}
+
 {% for capture in frontend.capture | default([]) %}
   capture {{ capture.type }} {{ capture.name }} len {{ capture.length }}
 {% endfor -%}
@@ -79,7 +89,7 @@ frontend {{ frontend.name }}
 
 {% endfor -%}
 
-{% if frontend.redirect_map is defined and frontend.redirect.enabled %}
+{% if frontend.redirect_map is defined and frontend.redirect_map.enabled %}
   ### redirects
   http-request redirect location %[capture.req.uri,map({{ frontend.redirect_map.name }})] code 301 if { capture.req.uri,map({{ frontend.redirect_map.name }}) -m found }
 {% endif -%}
@@ -88,15 +98,14 @@ frontend {{ frontend.name }}
   ### Header manipulation ###
 {% endif -%}  
 {% for http_request in frontend.http_request | default([]) %}
+  {% if http_request.comment is defined %} # {{ http_request.comment }}{% endif %}
   http-request {{ http_request.action }}{% if http_request.param is defined %} {{ http_request.param }}{% endif %}{% if http_request.cond is defined %} {{ http_request.cond }}{% endif %}
 
 {% endfor -%}
-
 {% for http_response in frontend.http_response | default([]) %}
   http-response {{ http_response.action }}{% if http_response.param is defined %} {{ http_response.param }}{% endif %}{% if http_response.cond is defined %} {{ http_response.cond }}{% endif %}
 
 {% endfor -%}
-
 {% for http_after_response in frontend.http_after_response | default([]) %}
   http-after-response {{ http_after_response.action }}{% if http_after_response.param is defined %} {{ http_after_response.param }}{% endif %}{% if http_after_response.cond is defined %} {{ http_after_response.cond }}{% endif %}
 
@@ -152,4 +161,5 @@ frontend {{ frontend.name }}
 {% for line in frontend.raw_options | default([]) %}
   {{ line }}
 {% endfor %}
+
 {% endfor -%}

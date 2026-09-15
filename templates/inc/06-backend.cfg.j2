@@ -1,5 +1,7 @@
 {% for backend in haproxy_backends %}
-  ### back ends ###
+{% if loop.first %}
+    ### Back ends ###
+{% endif %}
 backend {{ backend.name }}
 {% if backend.description is defined %}
   description {{ backend.description }}
@@ -29,8 +31,14 @@ backend {{ backend.name }}
   no option {{ option }}
 {% endfor -%}
 
-{% if backend.http_check is defined %}
+{% if backend.http_check is defined and backend.http_check is string %}
+    {# Old format - single value #}
   http-check {{ backend.http_check }}
+{% else %}
+    {# New format - list of values #}
+{%- for check_value in backend.http_check %}
+  http-check {{ check_value }}
+{% endfor -%}
 {% endif -%}
 
 {% if backend.cookie is defined %}
@@ -125,6 +133,11 @@ backend {{ backend.name }}
 {% for http_response in backend.http_response | default([]) %}
   http-response {{ http_response.action }}{% if http_response.param is defined %} {{ http_response.param }}{% endif %}{% if http_response.cond is defined %} {{ http_response.cond }}{% endif %}
 
+{% endfor -%}
+
+{% for http_remap in backend.redirect_map | default([]) %}
+  ### {{ http_remap.name }}
+  http-request redirect location %[capture.{{ http_remap.capture}},map(/etc/haproxy/maps/{{ http_remap.map}})] code {{ http_remap.status }} if { capture.{{ http_remap.capture }},map(/etc/haproxy/maps/{{ http_remap.map }}) -i -m found }
 {% endfor -%}
 
 {% for compression in backend.compression | default([]) %}
