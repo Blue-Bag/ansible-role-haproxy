@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+# Launched hosts: no worker secret required, but still Cloudflare-only so the
+# CDN cannot be bypassed. Built from inventory hosts in group
+# "{{ cf_hosts_group }}" with cf_routing_enabled true and cf_restrict_access false.
+{% for host in cf_only_hosts %}
+{{ host | lower }}
+{% endfor %}

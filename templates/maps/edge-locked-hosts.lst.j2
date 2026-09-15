@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+# Hosts locked to the Cloudflare worker: traffic must come from a Cloudflare
+# edge AND carry the X-Edge-Auth secret. Built from inventory hosts in group
+# "{{ cf_hosts_group }}" with cf_routing_enabled and cf_restrict_access true.
+{% for host in cf_edge_locked_hosts %}
+{{ host | lower }}
+{% endfor %}

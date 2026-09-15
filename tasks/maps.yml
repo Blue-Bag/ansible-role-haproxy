@@ -1,0 +1,24 @@
+# tasks file for haproxy
+---
+- name: Maps | create directories
+  file:
+    path: "{{ haproxy_maps_path }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: '0750'
+
+  tags:
+    - haproxy-maps-create-directories
+
+- name: maps| copy files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.file_mode | default('0400') }}"
+  with_items: "{{ haproxy_map_files }}"
+  notify: restart haproxy
+  tags:
+    - haproxy-maps-copy-files

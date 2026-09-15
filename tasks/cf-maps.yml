@@ -1,0 +1,50 @@
+# Cloudflare edge routing: host lists and edge IP list for the frontend ACLs.
+---
+- name: CF maps | host lists for the edge ACLs
+  become: true
+  template:
+    src: "maps/{{ item }}.j2"
+    dest: "{{ haproxy_maps_path }}/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - 'edge-locked-hosts.lst'
+    - 'cf-only-hosts.lst'
+  notify: restart haproxy
+  tags:
+    - haproxy-cf-maps-hosts
+
+- name: CF maps | install the Cloudflare IP refresh script
+  become: true
+  template:
+    src: 'refresh-cloudflare-ips.sh.j2'
+    dest: "{{ cf_ips_refresh_script }}"
+    owner: root
+    group: root
+    mode: '0750'
+  tags:
+    - haproxy-cf-maps-ips
+
+# The list contents are owned by the script, not by Ansible - see the header
+# comment in the template. This only guarantees the file exists before the
+# config that references it is validated.
+- name: CF maps | seed the Cloudflare IP list
+  become: true
+  command: "{{ cf_ips_refresh_script }}"
+  args:
+    creates: "{{ haproxy_maps_path }}/cloudflare_ips.lst"
+  tags:
+    - haproxy-cf-maps-ips
+
+- name: CF maps | schedule the Cloudflare IP refresh
+  become: true
+  cron:
+    name: 'refresh cloudflare ips'
+    user: root
+    weekday: "{{ cf_ips_refresh_cron_weekday }}"
+    hour: "{{ cf_ips_refresh_cron_hour }}"
+    minute: '17'
+    job: "{{ cf_ips_refresh_script }} >/dev/null"
+  tags:
+    - haproxy-cf-maps-ips

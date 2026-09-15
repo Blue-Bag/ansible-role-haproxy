@@ -2,7 +2,7 @@
 
 - name: Copy HAProxy configuration in place.
   become: true
-  template:
+  ansible.builtin.template:
     src: "{{ haproxy_cfg_template }}"
     dest: /etc/haproxy/haproxy.cfg
     mode: 0644
@@ -13,3 +13,6 @@
   notify: restart haproxy
   tags:
     - haproxy-configuration-update-file
+
+
+## write a config file test here

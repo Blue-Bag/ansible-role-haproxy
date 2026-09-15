@@ -1,20 +1,22 @@
 ---
 - block:
   - name: Enable Backports repository (Debian).
-    apt_repository:
-      repo: "deb http://ftp.debian.org/debian {{ ansible_distribution_release }}-backports main"
+    ansible.builtin.deb822_repository:
+      name: "{{ ansible_facts['distribution_release'] }}-backports"
+      types: deb
+      uris: "http://ftp.debian.org/debian"
+      suites: "{{ ansible_facts['distribution_release'] }}-backports"
+      components: main
       state: present
-      filename: "{{ ansible_distribution_release }}_backports"
-    # ansible_distribution_major_version == '10'
 
   - name: Update the repository cache and update package default release backport
     apt:
       name: "{{ haproxy_package_name }}"
       state: latest
-      default_release: "{{ ansible_distribution_release }}-backports"
+      default_release: "{{ ansible_facts['distribution_release'] }}-backports"
       update_cache: yes
-    when: ansible_distribution == "Debian" and haproxy_use_backports
-  when: ansible_distribution == "Debian" and haproxy_use_backports | bool
+    when: ansible_facts['distribution'] == "Debian" and haproxy_use_backports
+  when: ansible_facts['distribution'] == "Debian" and haproxy_use_backports | bool
 
 
 - name: install | add repository from PPA and install its signing key

@@ -244,3 +244,36 @@ pip_install_packages:
 python_package_dependencies:
   - name: python3-openssl
     state: present
+    
+# Cloudflare edge routing / origin lockdown
+# See the cloudflare-worker-auth wiki page for the design.
+cf_routing_hosts: false
+
+# Inventory group holding the site hosts served by this load balancer.
+cf_hosts_group: "{{ inventory_hostname_short }}"
+
+# Hosts in that group that are routed through Cloudflare. Site hosts are
+# identified by the dot in their inventory name (the underscore twins are
+# aliases); the load balancer itself is never a site.
+cf_routed_hosts: >-
+  {{ groups[cf_hosts_group] | default([]) | difference([inventory_hostname])
+     | select('search', '\.') | map('extract', hostvars)
+     | selectattr('cf_routing_enabled', 'defined')
+     | selectattr('cf_routing_enabled')
+     | map(attribute='inventory_hostname') | list | unique | sort }}
+
+# Pre-launch: must arrive from a Cloudflare edge AND carry the worker secret.
+cf_edge_locked_hosts: >-
+  {{ cf_routed_hosts | map('extract', hostvars)
+     | selectattr('cf_restrict_access', 'defined')
+     | selectattr('cf_restrict_access')
+     | map(attribute='inventory_hostname') | list | sort }}
+
+# Launched: no secret, but still Cloudflare-only so the CDN can't be bypassed.
+cf_only_hosts: "{{ cf_routed_hosts | difference(cf_edge_locked_hosts) | sort }}"
+
+cf_ips_refresh_script: '/usr/local/sbin/refresh-cloudflare-ips.sh'
+cf_ips_refresh_cron_hour: '4'
+cf_ips_refresh_cron_weekday: '0'
+# Minimum number of prefixes a fetch must return to be considered sane.
+cf_ips_min_prefixes: 15

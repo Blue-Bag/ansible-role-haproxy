@@ -1,0 +1,37 @@
+# cloudflare is handling AUTH
+{% if 'local_src' not in (frontend.acl | default([]) | map(attribute='name') | list) %}
+    # Every deny below depends on local_src and this frontend does not
+    # declare it, so define it here.
+    acl local_src    src 127.0.0.1 ::1
+{% endif %}
+    acl is_locked    hdr(host),host_only,lower -f /etc/haproxy/maps/edge-locked-hosts.lst
+    acl is_cf_only   hdr(host),host_only,lower -f /etc/haproxy/maps/cf-only-hosts.lst
+    #
+    # IMPORTANT: only put a host in edge-locked-hosts.lst once it is
+    # (a) orange-clouded through Cloudflare, (b) covered by a worker route
+    # (<host>/*), and (c) stripped of Apache basic auth. A locked host not
+    # behind the worker 403s for everyone — nothing injects the secret.
+
+    # Requests that came through the CF worker carry the shared secret.
+    # -m str = exact string comparison, no regex escaping concerns.
+    acl edge_authed  req.hdr(X-Edge-Auth) -m str {{ cf_edge_secret_value }}
+
+    # The TCP peer must be a Cloudflare edge. List maintained by
+    # refresh-cloudflare-ips.sh from https://www.cloudflare.com/ips/.
+    acl from_cf      src -f /etc/haproxy/maps/cloudflare_ips.lst
+
+    # Each condition is a separate deny so they compose as AND-requirements.
+    # (A single "if is_locked !edge_authed !from_cf" line would mean any
+    # request from a Cloudflare IP skips the secret check entirely — e.g. a
+    # third party's CF zone pointed at this origin.)
+    http-request deny deny_status 403 if is_locked !from_cf !local_src
+    http-request deny deny_status 403 if is_locked !edge_authed !local_src
+    http-request deny deny_status 403 if is_cf_only !from_cf !local_src
+
+    # Hygiene: the secret has done its job — don't pass it to Apache/Drupal
+    # (keeps it out of origin access logs and PHP $_SERVER).
+    http-request del-header X-Edge-Auth if is_locked
+
+    # Note on local access: drush/cron on the origin box talk to Apache
+    # directly (127.0.0.1:8080). Anything server-side that must reach the site
+    # THROUGH this frontend is covered by the local_src carve-out above.
