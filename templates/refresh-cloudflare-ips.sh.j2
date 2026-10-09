@@ -7,6 +7,7 @@
 # its contents so a Cloudflare range change is picked up between deploys
 # rather than being reverted by the next play.
 set -euo pipefail
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
 
 DEST='{{ haproxy_maps_path }}/cloudflare_ips.lst'
 MIN_PREFIXES={{ cf_ips_min_prefixes }}
@@ -35,6 +36,7 @@ if [ "$count" -lt "$MIN_PREFIXES" ]; then
 fi
 
 if [ -f "$DEST" ] && cmp -s "$tmp" "$DEST"; then
+  # echo "List is up todate"
   exit 0
 fi
 
@@ -46,8 +48,9 @@ fi
 
 install -o root -g root -m 0644 "$tmp" "$DEST"
 
-if ! haproxy -c -f "$CFG" > /dev/null 2>&1; then
-  echo "refresh-cloudflare-ips: haproxy config check failed - rolling back" >&2
+
+if ! check_out="$(haproxy -c -f "$CFG" 2>&1)"; then
+  echo "refresh-cloudflare-ips: haproxy config check failed - rolling back: $check_out" >&2
   if [ -n "$backup" ]; then
     mv "$backup" "$DEST"
   else
